@@ -16,10 +16,57 @@ const Stack = createNativeStackNavigator();
 function AppWrapper() {
   // UI JSON과 핸들러를 전역 상태로 설정하는 함수들
   const { setUIJSON, setHandlers } = useUIContext();
+  //const [req, setReq] = useState({});
+  let testUI = {};
+
 
   useEffect(() => {
     // GPT가 만들어 준 UI 구조 (JSON 형태)
-    const testUI = {
+    //testUI = 
+    
+
+    // 문자열로 된 함수들을 실행 가능한 진짜 함수로 변환
+    const parsedHandlers = {};
+    if (testUI.handlers) {
+      for (const [key, fnBody] of Object.entries(testUI.handlers)) {
+        // 문자열을 실제 함수로 변환: 예) new Function("alert('hi')")
+        parsedHandlers[key] = new Function(fnBody);
+      }
+      // UI 렌더링에는 handlers가 필요 없기 때문에 삭제
+      delete testUI.handlers;
+    }
+
+    // 전역 상태에 UI 구조와 핸들러 함수 등록
+    setUIJSON(testUI);
+    setHandlers(parsedHandlers);
+
+  }, [testUI]); // 컴포넌트가 마운트될 때 한 번만 실행됨
+
+  return (
+    // 앱의 전체 네비게이션 컨테이너
+    <NavigationContainer>
+      <Stack.Navigator>
+        {/* UI 렌더링 컴포넌트를 네비게이션 화면으로 등록 */}
+        <Stack.Screen name="테스트" component={UIRenderer} />
+      </Stack.Navigator>
+    </NavigationContainer>
+  );
+}
+
+// UI 상태 관리 컨텍스트를 앱 전체에 적용
+export default function App() {
+  const [response, setResponse] = useState('');
+  const [input, setInput] = useState(''); // 사용자 입력 상태 추가
+  const [container, setContainer] = useState(''); // 초기 컨테이너 설정
+  const [test, setTest] = useState(''); // 테스트 상태 추가
+   // 테스트 UI 상태 추가
+
+
+  const handlePress = async () => {
+    try {
+      const prompt = `아래 json형태로 ${input}UI를 구성해줘 react native로 작성할거야
+      {
+      
       type: 'View',
       props: { style: { padding: 20 } },
       children: [
@@ -57,45 +104,6 @@ function AppWrapper() {
       },
     };
 
-    // 문자열로 된 함수들을 실행 가능한 진짜 함수로 변환
-    const parsedHandlers = {};
-    if (testUI.handlers) {
-      for (const [key, fnBody] of Object.entries(testUI.handlers)) {
-        // 문자열을 실제 함수로 변환: 예) new Function("alert('hi')")
-        parsedHandlers[key] = new Function(fnBody);
-      }
-      // UI 렌더링에는 handlers가 필요 없기 때문에 삭제
-      delete testUI.handlers;
-    }
-
-    // 전역 상태에 UI 구조와 핸들러 함수 등록
-    setUIJSON(testUI);
-    setHandlers(parsedHandlers);
-
-  }, []); // 컴포넌트가 마운트될 때 한 번만 실행됨
-
-  return (
-    // 앱의 전체 네비게이션 컨테이너
-    <NavigationContainer>
-      <Stack.Navigator>
-        {/* UI 렌더링 컴포넌트를 네비게이션 화면으로 등록 */}
-        <Stack.Screen name="테스트" component={UIRenderer} />
-      </Stack.Navigator>
-    </NavigationContainer>
-  );
-}
-
-// UI 상태 관리 컨텍스트를 앱 전체에 적용
-export default function App() {
-    const [response, setResponse] = useState('');
-  const [input, setInput] = useState(''); // 사용자 입력 상태 추가
-  const [container, setContainer] = useState(''); // 초기 컨테이너 설정
-  const [test, setTest] = useState(''); // 테스트 상태 추가
-
-
-  const handlePress = async () => {
-    try {
-      const prompt = `
       `
       const result = await axios.post(
         'https://api.openai.com/v1/chat/completions',
